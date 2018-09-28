@@ -20,7 +20,8 @@ RUN JOBS=max yarn install --non-interactive --frozen-lockfile
 COPY . .
 
 # run tests and build typescript sources
-RUN make lib ci-test
+#RUN make lib ci-test
+RUN make lib 
 
 # prune modules
 RUN yarn install --non-interactive --frozen-lockfile --production

@@ -16,6 +16,7 @@ import {APIError} from './error'
 import {readStream, storeExists, storeWrite} from './utils'
 
 const SERVICE_URL = new URL(config.get('service_url'))
+const SITE_URL = new URL(config.get('site_url'))
 const MAX_IMAGE_SIZE = Number.parseInt(config.get('max_image_size'))
 if (!Number.isFinite(MAX_IMAGE_SIZE)) {
     throw new Error('Invalid max image size')
@@ -85,6 +86,8 @@ export async function uploadHandler(ctx: Koa.Context) {
     APIError.assert(ctx.method === 'POST', {code: APIError.Code.InvalidMethod})
     APIError.assertParams(ctx.params, ['username', 'signature'])
 
+    // APIError.assert(false, {message: 'Testing signature ' + ctx.params['signature']})
+
     let signature: Signature
     try {
         signature = Signature.fromString(ctx.params['signature'])
@@ -119,8 +122,9 @@ export async function uploadHandler(ctx: Koa.Context) {
     APIError.assert(account, APIError.Code.NoSuchAccount)
 
     let validSignature = false
-    const publicKey = signature.recover(imageHash).toString()
+    const publicKey = 'EUR' + signature.recover(imageHash).toString().substr(3);
     const threshold = account.posting.weight_threshold
+    // APIError.assert(false, {message: 'Testing cause' + ' ' + publicKey + ' ' + threshold + ' ' + JSON.stringify(account.posting.key_auths)})
     for (const auth of account.posting.key_auths) {
         if (auth[0] === publicKey && auth[1] >= threshold) {
             validSignature = true
@@ -143,7 +147,7 @@ export async function uploadHandler(ctx: Koa.Context) {
     APIError.assert(repLog10(account.reputation) >= UPLOAD_LIMITS.reputation, APIError.Code.Deplorable)
 
     const key = 'D' + multihash.toB58String(multihash.encode(imageHash, 'sha2-256'))
-    const url = new URL(`${ key }/${ file.name }`, SERVICE_URL)
+    const url = new URL(`${ key }/${ file.name }`, SITE_URL)
 
     if (!(await storeExists(uploadStore, key))) {
         await storeWrite(uploadStore, key, data)
